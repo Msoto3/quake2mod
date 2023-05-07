@@ -1,29 +1,25 @@
+This is a survival game mod, everything modded to a shooter game with abilities in weapons. In order to get this mod, all you have to do is download the github respository, once you download the file and extract the files all you have to do is copy and paste the folder named "mods" and put it in your quake2 game folder which for example through stream would be in the steam common folder in order to get the mod working. The game has 10 modded weapons, 5 abilites, 5 effect items, a shop and rounds for waves of monsters
 
-This is the complete source code for Quake 2, version 3.19, buildable with
-visual C++ 6.0.  The linux version should be buildable, but we haven't
-tested it for the release.
+for help info - f1
 
-The code is all licensed under the terms of the GPL (gnu public license).  
-You should read the entire license, but the gist of it is that you can do 
-anything you want with the code, including sell your new version.  The catch 
-is that if you distribute new binary versions, you are required to make the 
-entire source code available for free to everyone.
+Abilities/powerups
+h- superjump
+z - stealth blink
+c - armor lock
+x - jetpack
+j - teleport
 
-The primary intent of this release is for entertainment and educational 
-purposes, but the GPL does allow commercial exploitation if you obey the 
-full license.  If you want to do something commercial and you just can't bear 
-to have your source changes released, we could still negotiate a separate 
-license agreement (for $$$), but I would encourage you to just live with the 
-GPL.
+effect item pickups(once the items are picked up you will have to take stim for effect to take place)
+e - gravity stim 
+i - speed stim
+b - infinity stim
+q - slow stim
+v - regen stim
 
-All of the Q2 data files remain copyrighted and licensed under the 
-original terms, so you cannot redistribute data from the original game, but if 
-you do a true total conversion, you can create a standalone game based on 
-this code.
+shop
+tab - open shop
+when the shop is open you will see the keys needed to be pressed in order to get an item
+in exchange for something you buy, you will have to give some of your health there will also be a section of the shop to pick up your items.
 
-Thanks to Robert Duffy for doing the grunt work of building this release.
-
-John Carmack
-Id Software
-
-
+HOW TO START THE WAVES
+[ - starts the wave of enemies
