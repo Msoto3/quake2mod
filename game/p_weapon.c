@@ -542,6 +542,7 @@ GRENADE
 #define GRENADE_TIMER		3.0
 #define GRENADE_MINSPEED	400
 #define GRENADE_MAXSPEED	800
+int cluster = 0;
 
 void weapon_grenade_fire (edict_t *ent, qboolean held)
 {
@@ -552,6 +553,9 @@ void weapon_grenade_fire (edict_t *ent, qboolean held)
 	float	timer;
 	int		speed;
 	float	radius;
+	
+	
+	
 
 	radius = damage+40;
 	if (is_quad)
@@ -560,10 +564,26 @@ void weapon_grenade_fire (edict_t *ent, qboolean held)
 	VectorSet(offset, 8, 8, ent->viewheight-8);
 	AngleVectors (ent->client->v_angle, forward, right, NULL);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-
+	
 	timer = ent->client->grenade_time - level.time;
+
+	
 	speed = GRENADE_MINSPEED + (GRENADE_TIMER - timer) * ((GRENADE_MAXSPEED - GRENADE_MINSPEED) / GRENADE_TIMER);
-	fire_grenade2 (ent, start, forward, damage, speed, timer, radius, held);
+	
+	
+	fire_grenade2(ent, start, forward, damage, speed, timer, radius, held);
+	while (cluster <= 4) {
+		timer += 0.6;
+		fire_grenade2(ent, start, forward, damage, speed, timer, radius, held);
+		cluster++;
+
+	}
+	cluster = 0;
+
+
+	
+	
+
 
 	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
 		ent->client->pers.inventory[ent->client->ammo_index]--;
@@ -590,6 +610,8 @@ void weapon_grenade_fire (edict_t *ent, qboolean held)
 		ent->s.frame = FRAME_wave08;
 		ent->client->anim_end = FRAME_wave01;
 	}
+	
+
 }
 
 void Weapon_Grenade (edict_t *ent)
@@ -705,7 +727,7 @@ GRENADE LAUNCHER
 
 ======================================================================
 */
-
+int launcherCluster = 0;
 void weapon_grenadelauncher_fire (edict_t *ent)
 {
 	vec3_t	offset;
@@ -713,6 +735,7 @@ void weapon_grenadelauncher_fire (edict_t *ent)
 	vec3_t	start;
 	int		damage = 120;
 	float	radius;
+	int timer=2.5;
 
 	radius = damage+40;
 	if (is_quad)
@@ -726,6 +749,14 @@ void weapon_grenadelauncher_fire (edict_t *ent)
 	ent->client->kick_angles[0] = -1;
 
 	fire_grenade (ent, start, forward, damage, 600, 2.5, radius);
+	while (launcherCluster <= 3) {
+		timer++;
+		fire_grenade(ent, start, forward, damage, 600, timer, radius);
+		launcherCluster++;
+
+	}
+	launcherCluster = 0;
+	
 
 	gi.WriteByte (svc_muzzleflash);
 	gi.WriteShort (ent-g_edicts);
@@ -780,7 +811,8 @@ void Weapon_RocketLauncher_Fire (edict_t *ent)
 
 	VectorSet(offset, 8, 8, ent->viewheight-8);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-	fire_rocket (ent, start, forward, damage, 650, damage_radius, radius_damage);
+	fire_rocket (ent, start, forward, damage, 20, damage_radius, radius_damage);
+	
 
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);
@@ -828,14 +860,15 @@ void Blaster_Fire (edict_t *ent, vec3_t g_offset, int damage, qboolean hyper, in
 
 	VectorScale (forward, -2, ent->client->kick_origin);
 	ent->client->kick_angles[0] = -1;
+	fire_rail(ent, start, forward, damage*5, 100);
 
-	fire_blaster (ent, start, forward, damage, 1000, effect, hyper);
+	//fire_blaster (ent, start, forward, damage, 10, effect, hyper);
 
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);
 	gi.WriteShort (ent-g_edicts);
 	if (hyper)
-		gi.WriteByte (MZ_HYPERBLASTER | is_silenced);
+		gi.WriteByte (MZ_BLUEHYPERBLASTER | is_silenced);
 	else
 		gi.WriteByte (MZ_BLASTER | is_silenced);
 	gi.multicast (ent->s.origin, MULTICAST_PVS);
@@ -1011,7 +1044,8 @@ void Machinegun_Fire (edict_t *ent)
 	AngleVectors (angles, forward, right, NULL);
 	VectorSet(offset, 0, 8, ent->viewheight-8);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-	fire_bullet (ent, start, forward, damage, kick, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, MOD_MACHINEGUN);
+	//fire_bullet (ent, start, forward, damage, kick, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, MOD_MACHINEGUN);
+	fire_bfg(ent, start, forward, damage, 50, 50);//added for mod
 
 	gi.WriteByte (svc_muzzleflash);
 	gi.WriteShort (ent-g_edicts);
@@ -1147,8 +1181,8 @@ void Chaingun_Fire (edict_t *ent)
 		u = crandom()*4;
 		VectorSet(offset, 0, r, u + ent->viewheight-8);
 		P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-
-		fire_bullet (ent, start, forward, damage, kick, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, MOD_CHAINGUN);
+		fire_blaster(ent, start, forward, damage, 1000, 5, true);
+		
 	}
 
 	// send muzzle flash
@@ -1208,7 +1242,7 @@ void weapon_shotgun_fire (edict_t *ent)
 		damage *= 4;
 		kick *= 4;
 	}
-
+	
 	if (deathmatch->value)
 		fire_shotgun (ent, start, forward, damage, kick, 500, 500, DEFAULT_DEATHMATCH_SHOTGUN_COUNT, MOD_SHOTGUN);
 	else
@@ -1217,7 +1251,7 @@ void weapon_shotgun_fire (edict_t *ent)
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);
 	gi.WriteShort (ent-g_edicts);
-	gi.WriteByte (MZ_SHOTGUN | is_silenced);
+	gi.WriteByte (MZ_SHOTGUN2 | is_silenced);
 	gi.multicast (ent->s.origin, MULTICAST_PVS);
 
 	ent->client->ps.gunframe++;
@@ -1331,7 +1365,9 @@ void weapon_railgun_fire (edict_t *ent)
 
 	VectorSet(offset, 0, 7,  ent->viewheight-8);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-	fire_rail (ent, start, forward, damage, kick);
+	//fire_rail (ent, start, forward, damage, kick);
+	fire_bullet(ent, start, forward, damage, kick, 5, 5, 10);
+	
 
 	// send muzzle flash
 	gi.WriteByte (svc_muzzleflash);
@@ -1363,7 +1399,6 @@ BFG10K
 
 ======================================================================
 */
-
 void weapon_bfg_fire (edict_t *ent)
 {
 	vec3_t	offset, start;
@@ -1374,14 +1409,14 @@ void weapon_bfg_fire (edict_t *ent)
 	if (deathmatch->value)
 		damage = 200;
 	else
-		damage = 500;
+		damage = 30;
 
 	if (ent->client->ps.gunframe == 9)
 	{
 		// send muzzle flash
 		gi.WriteByte (svc_muzzleflash);
 		gi.WriteShort (ent-g_edicts);
-		gi.WriteByte (MZ_BFG | is_silenced);
+		gi.WriteByte (MZ_BFG| is_silenced);
 		gi.multicast (ent->s.origin, MULTICAST_PVS);
 
 		ent->client->ps.gunframe++;
@@ -1412,7 +1447,10 @@ void weapon_bfg_fire (edict_t *ent)
 
 	VectorSet(offset, 8, 8, ent->viewheight-8);
 	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
-	fire_bfg (ent, start, forward, damage, 400, damage_radius);
+	
+	fire_grenade2(ent, start, forward, 2000, 100, 5, 2000, false);
+	
+
 
 	ent->client->ps.gunframe++;
 
@@ -1420,13 +1458,14 @@ void weapon_bfg_fire (edict_t *ent)
 
 	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )
 		ent->client->pers.inventory[ent->client->ammo_index] -= 50;
+
+	
 }
 
 void Weapon_BFG (edict_t *ent)
 {
 	static int	pause_frames[]	= {39, 45, 50, 55, 0};
 	static int	fire_frames[]	= {9, 17, 0};
-
 	Weapon_Generic (ent, 8, 32, 55, 58, pause_frames, fire_frames, weapon_bfg_fire);
 }
 

@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // because we define the full size ones in this file
 #define	GAME_INCLUDE
 #include "game.h"
+#include <vadefs.h>
 
 // the "gameversion" client command will print this plus compile date
 #define	GAMEVERSION	"baseq2"
@@ -251,7 +252,6 @@ typedef struct gitem_s
 	int			quantity;		// for ammo how much, for weapons how much is used per shot
 	char		*ammo;			// for weapons
 	int			flags;			// IT_* flags
-
 	int			weapmodel;		// weapon model index (for weapons)
 
 	void		*info;
@@ -755,6 +755,7 @@ void InitClientResp (gclient_t *client);
 void InitBodyQue (void);
 void ClientBeginServerFrame (edict_t *ent);
 
+
 //
 // g_player.c
 //
@@ -812,7 +813,9 @@ void FetchClientEntData (edict_t *ent);
 void UpdateChaseCam(edict_t *ent);
 void ChaseNext(edict_t *ent);
 void ChasePrev(edict_t *ent);
-void GetChaseTarget(edict_t *ent);
+void GetChaseTarget(edict_t* ent);
+
+
 
 //============================================================================
 
@@ -959,6 +962,8 @@ struct gclient_s
 
 	edict_t		*chase_target;		// player we are chasing
 	qboolean	update_chase;		// need to update chase info?
+
+	
 };
 
 
@@ -1035,7 +1040,7 @@ struct edict_s
 	edict_t		*movetarget;
 	float		yaw_speed;
 	float		ideal_yaw;
-
+	
 	float		nextthink;
 	void		(*prethink) (edict_t *ent);
 	void		(*think)(edict_t *self);
@@ -1109,5 +1114,10 @@ struct edict_s
 	// common data blocks
 	moveinfo_t		moveinfo;
 	monsterinfo_t	monsterinfo;
+	int healthRegen;
+	int startWave;
+	
+	
 };
 
+extern void waveSpawn(edict_t* ent);

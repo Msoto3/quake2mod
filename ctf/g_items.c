@@ -353,7 +353,7 @@ void Use_Quad (edict_t *ent, gitem_t *item)
 
 	ent->client->pers.inventory[ITEM_INDEX(item)]--;
 	ValidateSelectedItem (ent);
-
+	
 	if (quad_drop_timeout_hack)
 	{
 		timeout = quad_drop_timeout_hack;

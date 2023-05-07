@@ -337,6 +337,7 @@ void M_ChangeYaw (edict_t *ent)
 			move = -speed;
 	}
 	
+	
 	ent->s.angles[YAW] = anglemod (current + move);
 }
 

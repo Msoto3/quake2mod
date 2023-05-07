@@ -1567,6 +1567,9 @@ This will be called once for each client frame, which will
 usually be a couple times for each server frame.
 ==============
 */
+
+
+
 void ClientThink (edict_t *ent, usercmd_t *ucmd)
 {
 	gclient_t	*client;
@@ -1586,7 +1589,7 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 			level.exitintermission = true;
 		return;
 	}
-
+	
 	pm_passent = ent;
 
 	if (ent->client->chase_target) {
@@ -1599,17 +1602,20 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 
 		// set up for pmove
 		memset (&pm, 0, sizeof(pm));
-
+		
 		if (ent->movetype == MOVETYPE_NOCLIP)
 			client->ps.pmove.pm_type = PM_SPECTATOR;
 		else if (ent->s.modelindex != 255)
 			client->ps.pmove.pm_type = PM_GIB;
 		else if (ent->deadflag)
 			client->ps.pmove.pm_type = PM_DEAD;
+		else if (ent->flags == FL_GODMODE)
+			client->ps.pmove.pm_type = PM_FREEZE;
 		else
 			client->ps.pmove.pm_type = PM_NORMAL;
-
+	
 		client->ps.pmove.gravity = sv_gravity->value;
+
 		pm.s = client->ps.pmove;
 
 		for (i=0 ; i<3 ; i++)
@@ -1641,6 +1647,7 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 			ent->s.origin[i] = pm.s.origin[i]*0.125;
 			ent->velocity[i] = pm.s.velocity[i]*0.125;
 		}
+	
 
 		VectorCopy (pm.mins, ent->mins);
 		VectorCopy (pm.maxs, ent->maxs);
@@ -1693,6 +1700,8 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 			other->touch (other, ent, NULL, NULL);
 		}
 
+		
+
 	}
 
 	client->oldbuttons = client->buttons;
@@ -1741,7 +1750,35 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 		if (other->inuse && other->client->chase_target == ent)
 			UpdateChaseCam(other);
 	}
+
+	if (ent->startWave == 1) {
+		static float wave_delay = 10.0; // delay in seconds between waves
+		static float next_wave_time = 0.0; // time of the next wave
+		static int waveCounter = 0;
+		if (level.time > next_wave_time)
+		{
+			for (int i = 0; i <= waveCounter; i++) {
+				waveSpawn(ent);
+			}
+			
+			waveCounter++;
+			next_wave_time = level.time + wave_delay;
+			gi.cprintf(NULL, PRINT_CHAT, "Wave %d spawned!\n", waveCounter);
+			if (waveCounter == 5) {
+				ent->startWave = 0;
+				waveCounter = 0;
+			}
+		}
+
+
+	}
+	
+
+	
+	
 }
+
+
 
 
 /*

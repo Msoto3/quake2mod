@@ -303,7 +303,46 @@ void HelpComputer (edict_t *ent)
 {
 	char	string[1024];
 	char	*sk;
+	char	string2[1024];
+	if (skill->value == 0)
+		sk = "easy";
+	else if (skill->value == 1)
+		sk = "medium";
+	else if (skill->value == 2)
+		sk = "hard";
+	else
+		sk = "hard+";
+	
+	// send the layout
+	Com_sprintf (string, sizeof(string),
+		" "			// background
+		"xv 202 yv 12 string2 \"\" "		// skill
+		"xv 0 yv 24 cstring2 \"Mod Help\" "		// level name
+		"xv 0 yv 54 cstring2 \"In this mod you are playing a survival game\nYou play for as many rounds as you can\nWith the weapons and abilites given to you.\n\" "		// help 1
+		"xv 0 yv 110 cstring2 \"be sure to utilize the shop with tab\nGLHF!\" "		// help 2
+		"xv 50 yv 164 string2 \"\" "
+		"xv 50 yv 172 string2 \"\" ", 
+		sk,
+		level.level_name,
+		game.helpmessage1,
+		game.helpmessage2,
+		level.killed_monsters, level.total_monsters, 
+		level.found_goals, level.total_goals,
+		level.found_secrets, level.total_secrets);
 
+
+	gi.WriteByte (svc_layout);
+	gi.WriteString (string);
+	
+	gi.unicast (ent, true);
+}
+
+
+void HelpComputer2(edict_t* ent)
+{
+	char	string[1024];
+	char* sk;
+	char	string2[1024];
 	if (skill->value == 0)
 		sk = "easy";
 	else if (skill->value == 1)
@@ -314,25 +353,27 @@ void HelpComputer (edict_t *ent)
 		sk = "hard+";
 
 	// send the layout
-	Com_sprintf (string, sizeof(string),
-		"xv 32 yv 8 picn help "			// background
-		"xv 202 yv 12 string2 \"%s\" "		// skill
-		"xv 0 yv 24 cstring2 \"%s\" "		// level name
-		"xv 0 yv 54 cstring2 \"%s\" "		// help 1
-		"xv 0 yv 110 cstring2 \"%s\" "		// help 2
-		"xv 50 yv 164 string2 \" kills     goals    secrets\" "
-		"xv 50 yv 172 string2 \"%3i/%3i     %i/%i       %i/%i\" ", 
+	Com_sprintf(string, sizeof(string),
+		" "			// background
+		"xv 202 yv 12 string2 \"\" "		// skill
+		"xv 0 yv 24 cstring2 \"SHOP\nThe keys given are how you buy the items(worth 20 HP)\n\" "		// level name
+		"xv 0 yv 54 cstring2 \"\'a\' WEAPONS\n\'=\' ARMOR\n\'-\' ADRENALINE SHOT\n\'.\' AMMO\n\" "		// help 1
+		"xv 0 yv 110 cstring2 \"\nItem effect pickups(just pick up the item you want,these are free)\n\nspeed stim: f2\ngravity stim: f3\ninfinity stim: f6 \" "		// help 2
+		"xv 50 yv 164 string2 \"      slow stim: f12\" "
+		"xv 50 yv 172 string2 \"      Heal Stim: K\" ",
 		sk,
 		level.level_name,
 		game.helpmessage1,
 		game.helpmessage2,
-		level.killed_monsters, level.total_monsters, 
+		level.killed_monsters, level.total_monsters,
 		level.found_goals, level.total_goals,
 		level.found_secrets, level.total_secrets);
 
-	gi.WriteByte (svc_layout);
-	gi.WriteString (string);
-	gi.unicast (ent, true);
+
+	gi.WriteByte(svc_layout);
+	gi.WriteString(string);
+
+	gi.unicast(ent, true);
 }
 
 
@@ -364,6 +405,28 @@ void Cmd_Help_f (edict_t *ent)
 	ent->client->showhelp = true;
 	ent->client->pers.helpchanged = 0;
 	HelpComputer (ent);
+}
+void Cmd_Help_f2(edict_t* ent)
+{
+	// this is for backwards compatability
+	if (deathmatch->value)
+	{
+		Cmd_Score_f(ent);
+		return;
+	}
+
+	ent->client->showinventory = false;
+	ent->client->showscores = false;
+
+	if (ent->client->showhelp && (ent->client->pers.game_helpchanged == game.helpchanged))
+	{
+		ent->client->showhelp = false;
+		return;
+	}
+
+	ent->client->showhelp = true;
+	ent->client->pers.helpchanged = 0;
+	HelpComputer2(ent);
 }
 
 
@@ -446,31 +509,79 @@ void G_SetStats (edict_t *ent)
 	//
 	// timers
 	//
+	static int lastUpdateTime = 0;
 	if (ent->client->quad_framenum > level.framenum)
 	{
 		ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex ("p_quad");
 		ent->client->ps.stats[STAT_TIMER] = (ent->client->quad_framenum - level.framenum)/10;
+		vec3_t velocity;
+		VectorScale(ent->velocity, 0.1, velocity);
+		VectorCopy(velocity, ent->velocity);
 	}
-	else if (ent->client->invincible_framenum > level.framenum)
+	else if (ent->client->invincible_framenum >= level.framenum && ent->healthRegen==1)
+	{
+		if (ent->client->invincible_framenum == level.framenum) {
+			ent->healthRegen = 0;
+		}
+		else {
+			ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_invulnerability");
+			ent->client->ps.stats[STAT_TIMER] = (ent->client->invincible_framenum - level.framenum) / 10;
+			if (level.time >= lastUpdateTime + 2.0) {
+
+				ent->health+=5;
+				if (ent->health > ent->max_health) {
+					ent->health = ent->max_health;
+				}
+				lastUpdateTime = level.time;
+			}
+
+		}
+		
+
+
+	}
+	else if (ent->client->invincible_framenum > level.framenum && ent->healthRegen==0)
 	{
 		ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex ("p_invulnerability");
 		ent->client->ps.stats[STAT_TIMER] = (ent->client->invincible_framenum - level.framenum)/10;
+		vec3_t velocity;
+		VectorScale(ent->velocity, 2, velocity);
+		VectorCopy(velocity, ent->velocity);
+		
+	
 	}
-	else if (ent->client->enviro_framenum > level.framenum)
+	else if (ent->client->enviro_framenum >= level.framenum)
 	{
-		ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex ("p_envirosuit");
-		ent->client->ps.stats[STAT_TIMER] = (ent->client->enviro_framenum - level.framenum)/10;
+		if (ent->client->enviro_framenum == level.framenum) {
+			sv_gravity->value = 800;
+			ent->client->ps.pmove.gravity = sv_gravity->value;
+		}
+		else {
+			ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex("p_envirosuit");
+			ent->client->ps.stats[STAT_TIMER] = (ent->client->enviro_framenum - level.framenum) / 10;
+			sv_gravity->value = 400;
+			ent->client->ps.pmove.gravity = sv_gravity->value;
+
+		}
+		
+
+	
 	}
 	else if (ent->client->breather_framenum > level.framenum)
 	{
 		ent->client->ps.stats[STAT_TIMER_ICON] = gi.imageindex ("p_rebreather");
 		ent->client->ps.stats[STAT_TIMER] = (ent->client->breather_framenum - level.framenum)/10;
+		ent->client->ps.stats[STAT_AMMO] = DF_INFINITE_AMMO;
+
 	}
 	else
 	{
+
 		ent->client->ps.stats[STAT_TIMER_ICON] = 0;
 		ent->client->ps.stats[STAT_TIMER] = 0;
+		
 	}
+	
 
 	//
 	// selected item
@@ -499,8 +610,11 @@ void G_SetStats (edict_t *ent)
 	{
 		if (ent->client->showscores || ent->client->showhelp)
 			ent->client->ps.stats[STAT_LAYOUTS] |= 1;
-		if (ent->client->showinventory && ent->client->pers.health > 0)
-			ent->client->ps.stats[STAT_LAYOUTS] |= 2;
+		if (ent->client->showinventory && ent->client->pers.health > 0) {
+			Cmd_Help_f2(ent);
+
+		}
+			//ent->client->ps.stats[STAT_LAYOUTS] |= 2;
 	}
 
 	//

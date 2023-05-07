@@ -197,14 +197,18 @@ void Drop_General (edict_t *ent, gitem_t *item)
 qboolean Pickup_Adrenaline (edict_t *ent, edict_t *other)
 {
 	if (!deathmatch->value)
-		other->max_health += 1;
-
+		other->max_health += 20;
+	
 	if (other->health < other->max_health)
 		other->health = other->max_health;
 
 	if (!(ent->spawnflags & DROPPED_ITEM) && (deathmatch->value))
 		SetRespawn (ent, ent->item->quantity);
-
+	other->health -= 40;
+	if (other->health <= 0) {
+		other->client->anim_priority = ANIM_DEATH;
+		other->deadflag = DEAD_DEAD;
+	}
 	return true;
 }
 

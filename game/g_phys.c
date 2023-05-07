@@ -585,6 +585,7 @@ void SV_Physics_Pusher (edict_t *ent)
 			if (!SV_Push (part, move, amove))
 				break;	// move was blocked
 		}
+		
 	}
 	if (pushed_p > &pushed[MAX_EDICTS])
 		gi.error (ERR_FATAL, "pushed_p > &pushed[MAX_EDICTS], memory corrupted");
@@ -616,6 +617,7 @@ void SV_Physics_Pusher (edict_t *ent)
 			SV_RunThink (part);
 		}
 	}
+	
 }
 
 //==================================================================
@@ -630,6 +632,7 @@ Non moving objects can only think
 void SV_Physics_None (edict_t *ent)
 {
 // regular thinking
+	
 	SV_RunThink (ent);
 }
 
@@ -648,7 +651,9 @@ void SV_Physics_Noclip (edict_t *ent)
 	
 	VectorMA (ent->s.angles, FRAMETIME, ent->avelocity, ent->s.angles);
 	VectorMA (ent->s.origin, FRAMETIME, ent->velocity, ent->s.origin);
+	
 
+	
 	gi.linkentity (ent);
 }
 
@@ -933,7 +938,6 @@ void G_RunEntity (edict_t *ent)
 {
 	if (ent->prethink)
 		ent->prethink (ent);
-
 	switch ( (int)ent->movetype)
 	{
 	case MOVETYPE_PUSH:
@@ -959,3 +963,8 @@ void G_RunEntity (edict_t *ent)
 		gi.error ("SV_Physics: bad movetype %i", (int)ent->movetype);			
 	}
 }
+
+
+
+
+

@@ -517,6 +517,13 @@ Creates a server's entity / program execution context by
 parsing textual entity definitions out of an ent file.
 ==============
 */
+
+
+
+
+
+
+
 void SpawnEntities (char *mapname, char *entities, char *spawnpoint)
 {
 	edict_t		*ent;
@@ -600,6 +607,9 @@ void SpawnEntities (char *mapname, char *entities, char *spawnpoint)
 		}
 
 		ED_CallSpawn (ent);
+		
+		
+		
 	}	
 
 	gi.dprintf ("%i entities inhibited\n", inhibit);
@@ -980,5 +990,40 @@ void SP_worldspawn (edict_t *ent)
 
 	// 63 testing
 	gi.configstring(CS_LIGHTS+63, "a");
+
+
+	
+
+	
+	
+	
 }
+
+
+//spawner
+void waveSpawn(edict_t* ent) {
+	edict_t* enemy = G_Spawn();
+	vec3_t enemySpawn;
+	VectorCopy(ent->s.origin, enemySpawn);
+	
+	float offset = 50.0f; // adjust as needed
+	enemySpawn[0] = ent->s.origin[0] + (rand() % (int)(2 * offset) - offset);
+	enemySpawn[1] = ent->s.origin[1] + (rand() % (int)(2 * offset) - offset);
+	enemySpawn[2] = ent->s.origin[2];
+
+	VectorCopy(enemySpawn, enemy->s.origin);
+
+	SP_monster_soldier_light(enemy);
+
+	// Make the monster face the player
+	VectorSubtract(ent->s.origin, enemy->s.origin, enemy->s.angles);
+	VectorNormalize(enemy->s.angles);
+	vectoangles(enemy->s.angles, enemy->s.angles);
+	
+}
+
+
+
+
+
 

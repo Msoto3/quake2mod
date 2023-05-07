@@ -40,7 +40,7 @@ void monster_fire_bullet (edict_t *self, vec3_t start, vec3_t dir, int damage, i
 
 void monster_fire_shotgun (edict_t *self, vec3_t start, vec3_t aimdir, int damage, int kick, int hspread, int vspread, int count, int flashtype)
 {
-	fire_shotgun (self, start, aimdir, damage, kick, hspread, vspread, count, MOD_UNKNOWN);
+	fire_bullet(self, start,aimdir, damage, kick, hspread, vspread, MOD_UNKNOWN);
 
 	gi.WriteByte (svc_muzzleflash2);
 	gi.WriteShort (self - g_edicts);
@@ -50,7 +50,7 @@ void monster_fire_shotgun (edict_t *self, vec3_t start, vec3_t aimdir, int damag
 
 void monster_fire_blaster (edict_t *self, vec3_t start, vec3_t dir, int damage, int speed, int flashtype, int effect)
 {
-	fire_blaster (self, start, dir, damage, speed, effect, false);
+	fire_bullet(self, start, dir, damage, 5, 5, 5, MOD_UNKNOWN);
 
 	gi.WriteByte (svc_muzzleflash2);
 	gi.WriteShort (self - g_edicts);
@@ -738,3 +738,8 @@ void swimmonster_start (edict_t *self)
 	self->think = swimmonster_start_go;
 	monster_start (self);
 }
+
+
+
+
+

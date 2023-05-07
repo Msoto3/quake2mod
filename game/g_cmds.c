@@ -192,6 +192,11 @@ void Cmd_Give_f (edict_t *ent)
 				continue;
 			ent->client->pers.inventory[i] += 1;
 		}
+		ent->health -= 20;
+		if (ent->health <= 0) {
+			ent->client->anim_priority = ANIM_DEATH;
+			ent->deadflag = DEAD_DEAD;
+		}
 		if (!give_all)
 			return;
 	}
@@ -206,6 +211,11 @@ void Cmd_Give_f (edict_t *ent)
 			if (!(it->flags & IT_AMMO))
 				continue;
 			Add_Ammo (ent, it, 1000);
+		}
+		ent->health -= 20;
+		if (ent->health <= 0) {
+			ent->client->anim_priority = ANIM_DEATH;
+			ent->deadflag = DEAD_DEAD;
 		}
 		if (!give_all)
 			return;
@@ -224,7 +234,11 @@ void Cmd_Give_f (edict_t *ent)
 		it = FindItem("Body Armor");
 		info = (gitem_armor_t *)it->info;
 		ent->client->pers.inventory[ITEM_INDEX(it)] = info->max_count;
-
+		ent->health -= 20;
+		if (ent->health <= 0) {
+			ent->client->anim_priority = ANIM_DEATH;
+			ent->deadflag = DEAD_DEAD;
+		}
 		if (!give_all)
 			return;
 	}
@@ -305,9 +319,11 @@ Sets client to godmode
 argv(0) god
 ==================
 */
+
 void Cmd_God_f (edict_t *ent)
 {
 	char	*msg;
+	
 
 	if (deathmatch->value && !sv_cheats->value)
 	{
@@ -316,13 +332,29 @@ void Cmd_God_f (edict_t *ent)
 	}
 
 	ent->flags ^= FL_GODMODE;
-	if (!(ent->flags & FL_GODMODE) )
-		msg = "godmode OFF\n";
-	else
-		msg = "godmode ON\n";
+	
+	if (!(ent->flags & FL_GODMODE)) 
+		msg = "armor lock off\n";
+
+		
+		
+
+	
+		
+	else 
+		msg = "Armor lock on\n";
+		
+		
+		
+		
+	
+		
 
 	gi.cprintf (ent, PRINT_HIGH, msg);
+
+	
 }
+
 
 
 /*
@@ -346,9 +378,16 @@ void Cmd_Notarget_f (edict_t *ent)
 
 	ent->flags ^= FL_NOTARGET;
 	if (!(ent->flags & FL_NOTARGET) )
-		msg = "notarget OFF\n";
-	else
-		msg = "notarget ON\n";
+		msg = "stealth off\n";
+	else {
+		msg = "BLINK STEP\n";
+		vec3_t forward;
+		ent->velocity[0] += 200;
+		ent->velocity[2] += 200;
+		
+
+	}
+		
 
 	gi.cprintf (ent, PRINT_HIGH, msg);
 }
@@ -371,16 +410,22 @@ void Cmd_Noclip_f (edict_t *ent)
 		return;
 	}
 
-	if (ent->movetype == MOVETYPE_NOCLIP)
+	if (ent->movetype == MOVETYPE_FLY)
 	{
+		sv_gravity->value = 800;
+		ent->client->ps.pmove.gravity = sv_gravity->value;
 		ent->movetype = MOVETYPE_WALK;
-		msg = "noclip OFF\n";
+		msg = "Jetpack OFF\n";
 	}
 	else
 	{
-		ent->movetype = MOVETYPE_NOCLIP;
-		msg = "noclip ON\n";
+		
+		sv_gravity->value = 5;
+		ent->client->ps.pmove.gravity = sv_gravity->value;
+		ent->movetype = MOVETYPE_FLY;
+		msg = "Jetpack ON\n";
 	}
+
 
 	gi.cprintf (ent, PRINT_HIGH, msg);
 }
@@ -654,7 +699,6 @@ void Cmd_Kill_f (edict_t *ent)
 	meansOfDeath = MOD_SUICIDE;
 	player_die (ent, ent, ent, 100000, vec3_origin);
 }
-
 /*
 =================
 Cmd_PutAway_f
@@ -733,9 +777,11 @@ void Cmd_Players_f (edict_t *ent)
 Cmd_Wave_f
 =================
 */
+
 void Cmd_Wave_f (edict_t *ent)
 {
 	int		i;
+	
 
 	i = atoi (gi.argv(1));
 
@@ -751,19 +797,42 @@ void Cmd_Wave_f (edict_t *ent)
 	switch (i)
 	{
 	case 0:
-		gi.cprintf (ent, PRINT_HIGH, "flipoff\n");
+		//gi.cprintf (ent, PRINT_HIGH, "flipoff\n");
 		ent->s.frame = FRAME_flip01-1;
 		ent->client->anim_end = FRAME_flip12;
+		ent->velocity[2] = 400;
 		break;
 	case 1:
-		gi.cprintf (ent, PRINT_HIGH, "salute\n");
+		//teleport
 		ent->s.frame = FRAME_salute01-1;
 		ent->client->anim_end = FRAME_salute11;
+		vec3_t origin;
+		vec3_t angles;
+		VectorCopy(ent->s.origin, origin);
+		VectorCopy(ent->client->v_angle, angles);
+
+		vec3_t forward;
+		AngleVectors(angles, forward, NULL, NULL);
+		VectorMA(origin, 128, forward, origin);
+
+		gi.WriteByte(svc_muzzleflash);
+		gi.WriteShort(ent - g_edicts);
+		gi.WriteByte(MZ_LOGIN);
+		gi.multicast(ent->s.origin, MULTICAST_PVS);
+		VectorCopy(origin, ent->s.origin);
+		gi.linkentity(ent);
+		
 		break;
 	case 2:
-		gi.cprintf (ent, PRINT_HIGH, "taunt\n");
+		//gi.cprintf (ent, PRINT_HIGH, "taunt\n");
 		ent->s.frame = FRAME_taunt01-1;
 		ent->client->anim_end = FRAME_taunt17;
+		ent->healthRegen = 1;
+		ent->client->pers.inventory[ITEM_INDEX(FindItem("Invulnerability"))]++;
+		
+		
+		
+		
 		break;
 	case 3:
 		gi.cprintf (ent, PRINT_HIGH, "wave\n");
@@ -867,6 +936,7 @@ void Cmd_Say_f (edict_t *ent, qboolean team, qboolean arg0)
 		}
 		gi.cprintf(other, PRINT_CHAT, "%s", text);
 	}
+	
 }
 
 void Cmd_PlayerList_f(edict_t *ent)
@@ -943,50 +1013,53 @@ void ClientCommand (edict_t *ent)
 	if (level.intermissiontime)
 		return;
 
-	if (Q_stricmp (cmd, "use") == 0)
-		Cmd_Use_f (ent);
-	else if (Q_stricmp (cmd, "drop") == 0)
-		Cmd_Drop_f (ent);
-	else if (Q_stricmp (cmd, "give") == 0)
-		Cmd_Give_f (ent);
-	else if (Q_stricmp (cmd, "god") == 0)
-		Cmd_God_f (ent);
-	else if (Q_stricmp (cmd, "notarget") == 0)
-		Cmd_Notarget_f (ent);
-	else if (Q_stricmp (cmd, "noclip") == 0)
-		Cmd_Noclip_f (ent);
-	else if (Q_stricmp (cmd, "inven") == 0)
-		Cmd_Inven_f (ent);
-	else if (Q_stricmp (cmd, "invnext") == 0)
-		SelectNextItem (ent, -1);
-	else if (Q_stricmp (cmd, "invprev") == 0)
-		SelectPrevItem (ent, -1);
-	else if (Q_stricmp (cmd, "invnextw") == 0)
-		SelectNextItem (ent, IT_WEAPON);
-	else if (Q_stricmp (cmd, "invprevw") == 0)
-		SelectPrevItem (ent, IT_WEAPON);
-	else if (Q_stricmp (cmd, "invnextp") == 0)
-		SelectNextItem (ent, IT_POWERUP);
-	else if (Q_stricmp (cmd, "invprevp") == 0)
-		SelectPrevItem (ent, IT_POWERUP);
-	else if (Q_stricmp (cmd, "invuse") == 0)
-		Cmd_InvUse_f (ent);
-	else if (Q_stricmp (cmd, "invdrop") == 0)
-		Cmd_InvDrop_f (ent);
-	else if (Q_stricmp (cmd, "weapprev") == 0)
-		Cmd_WeapPrev_f (ent);
-	else if (Q_stricmp (cmd, "weapnext") == 0)
-		Cmd_WeapNext_f (ent);
-	else if (Q_stricmp (cmd, "weaplast") == 0)
-		Cmd_WeapLast_f (ent);
-	else if (Q_stricmp (cmd, "kill") == 0)
-		Cmd_Kill_f (ent);
-	else if (Q_stricmp (cmd, "putaway") == 0)
-		Cmd_PutAway_f (ent);
-	else if (Q_stricmp (cmd, "wave") == 0)
-		Cmd_Wave_f (ent);
+	if (Q_stricmp(cmd, "use") == 0)
+		Cmd_Use_f(ent);
+	else if (Q_stricmp(cmd, "drop") == 0)
+		Cmd_Drop_f(ent);
+	else if (Q_stricmp(cmd, "give") == 0)
+		Cmd_Give_f(ent);
+	else if (Q_stricmp(cmd, "god") == 0)
+		Cmd_God_f(ent);
+	else if (Q_stricmp(cmd, "notarget") == 0)
+		Cmd_Notarget_f(ent);
+	else if (Q_stricmp(cmd, "noclip") == 0)
+		Cmd_Noclip_f(ent);
+	else if (Q_stricmp(cmd, "inven") == 0)
+		Cmd_Inven_f(ent);
+	else if (Q_stricmp(cmd, "invnext") == 0)
+		SelectNextItem(ent, -1);
+	else if (Q_stricmp(cmd, "invprev") == 0)
+		ent->startWave = 1;
+	else if (Q_stricmp(cmd, "invnextw") == 0)
+		SelectNextItem(ent, IT_WEAPON);
+	else if (Q_stricmp(cmd, "invprevw") == 0)
+		SelectPrevItem(ent, IT_WEAPON);
+	else if (Q_stricmp(cmd, "invnextp") == 0)
+		SelectNextItem(ent, IT_POWERUP);
+	else if (Q_stricmp(cmd, "invprevp") == 0)
+		SelectPrevItem(ent, IT_POWERUP);
+	else if (Q_stricmp(cmd, "invuse") == 0)
+		Cmd_InvUse_f(ent);
+	else if (Q_stricmp(cmd, "invdrop") == 0)
+		Cmd_InvDrop_f(ent);
+	else if (Q_stricmp(cmd, "weapprev") == 0)
+		Cmd_WeapPrev_f(ent);
+	else if (Q_stricmp(cmd, "weapnext") == 0)
+		Cmd_WeapNext_f(ent);
+	else if (Q_stricmp(cmd, "weaplast") == 0)
+		Cmd_WeapLast_f(ent);
+	else if (Q_stricmp(cmd, "kill") == 0)
+		Cmd_Kill_f(ent);
+	else if (Q_stricmp(cmd, "putaway") == 0)
+		Cmd_PutAway_f(ent);
+	else if (Q_stricmp(cmd, "wave") == 0)
+		Cmd_Wave_f(ent);
 	else if (Q_stricmp(cmd, "playerlist") == 0)
 		Cmd_PlayerList_f(ent);
 	else	// anything that doesn't match a command will be a chat
 		Cmd_Say_f (ent, false, true);
 }
+
+
+
