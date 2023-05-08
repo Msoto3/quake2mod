@@ -1006,7 +1006,7 @@ void waveSpawn(edict_t* ent) {
 	vec3_t enemySpawn;
 	VectorCopy(ent->s.origin, enemySpawn);
 	
-	float offset = 50.0f; // adjust as needed
+	float offset =150.0f; // adjust as needed
 	enemySpawn[0] = ent->s.origin[0] + (rand() % (int)(2 * offset) - offset);
 	enemySpawn[1] = ent->s.origin[1] + (rand() % (int)(2 * offset) - offset);
 	enemySpawn[2] = ent->s.origin[2];

@@ -1757,7 +1757,7 @@ void ClientThink (edict_t *ent, usercmd_t *ucmd)
 		static int waveCounter = 0;
 		if (level.time > next_wave_time)
 		{
-			for (int i = 0; i <= waveCounter; i++) {
+			for (int i = 0; i <= 5; i++) {
 				waveSpawn(ent);
 			}
 			
